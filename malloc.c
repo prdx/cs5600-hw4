@@ -154,7 +154,7 @@ malloc(size_t size) {
   // write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
   // If it does not exist create a new arena
-  pthread_mutex_lock(&global_mutex);
+  pthread_mutex_lock(&arena_ptr->arena_lock);
 
   // Round request to the nearest power of 2
   size_t total_size = sizeof(block_header_t) + size;
@@ -170,6 +170,7 @@ malloc(size_t size) {
     // Request memory to the OS
     if ((block = request_memory(total_size)) == NULL) {
       MALLOC_FAILURE_ACTION;
+      pthread_mutex_unlock(&arena_ptr->arena_lock);
       return NULL;
     }
 
@@ -199,7 +200,7 @@ malloc(size_t size) {
   block_header_t *temp = block;
   temp->is_free = occupied;
 
-  pthread_mutex_unlock(&global_mutex);
+  pthread_mutex_unlock(&arena_ptr->arena_lock);
 
   // Return the address of the data section
   return (char *)block + sizeof(block_header_t);
