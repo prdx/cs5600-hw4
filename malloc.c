@@ -1,5 +1,4 @@
-/*
- Author: Anak Agung Ngurah Bagus Trihatmaja
+/* Author: Anak Agung Ngurah Bagus Trihatmaja
  Malloc library using buddy allocation algorithm
  S01E02
 */
@@ -17,25 +16,24 @@ void split(block_header_t *, size_t);
 pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
 block_header_t *head = NULL;
 block_header_t *tail = NULL;
+arena_header_t arena;
+
+// Check if malloc has been called previously
+unsigned has_malloc_initiated = 0;
 
 static __thread arena_header_t* arena_ptr;
-
+static malloc_data main_data = {0};
 
 void *init_malloc(size_t, const void *);
+int init_arena();
 
 typedef void *(*__hook)(size_t __size, const void *);
 __hook __malloc_hook =  (__hook) init_malloc;
 
 /*------------INIT MALLOC----------*/
 // Define it to look like malloc
-
 void *
 init_malloc(size_t size, const void *caller) {
-
-  // DEBUG
-  // char buf[1024];
-  // snprintf(buf, 1024, "Testing malloc hook\n");
-  // write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
   // If request is 0, we return NULL
   if (size == 0)
@@ -43,10 +41,27 @@ init_malloc(size_t size, const void *caller) {
   // If request is smaller than 8, we round it to 8
   if (size < 8)
     size = 8;
+  
+  // If fail to init arena
+  if (init_arena())
+    return NULL;
 
   __malloc_hook = NULL;
   // call malloc
   return malloc(size);
+}
+
+int 
+init_arena() {
+  // If malloc has been done at the beginning, no need to init arena
+  if (has_malloc_initiated)
+    return 0;
+  
+  arena_ptr = &main_data.arena;
+  INIT_PTHREAD_MUTEX(&arena_ptr->arena_lock);
+  arena_ptr->number_of_heaps = 1;
+  arena_ptr->number_of_threads = 1;
+  return 0;
 }
 
 /*------------MALLOC---------------*/
@@ -114,16 +129,13 @@ void *request_memory(size_t size) {
 
   // Allocate the memory
   if (size <= HEAP_PAGE_SIZE) {
-    if ((block = sbrk(HEAP_PAGE_SIZE)) == (void *)-1) {
-      MALLOC_FAILURE_ACTION;
-      return NULL;
-    }
-  } else {
-    if ((block = mmap(NULL, size, PROT_READ | PROT_WRITE,
-                      MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) == (void *)-1) {
-      MALLOC_FAILURE_ACTION;
-      return NULL;
-    }
+    size = HEAP_PAGE_SIZE;
+  } 
+
+  if ((block = mmap(NULL, size, PROT_READ | PROT_WRITE,
+          MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) == (void *)-1) {
+    MALLOC_FAILURE_ACTION;
+    return NULL;
   }
   return block;
 }

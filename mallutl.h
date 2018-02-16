@@ -16,10 +16,11 @@
 
 /* The memory request must be always multiple of PAGE_SIZE */
 #define HEAP_PAGE_SIZE sysconf(_SC_PAGE_SIZE)
+#define NUMBER_OF_PROC sysconf(_SC_NPROCESSORS_ONLN)
 #define BASE 2
 #define SIZE_TO_ORDER(size) (ceil((log(size) / log(BASE))))
 
-#define INIT_PTHREAD_MUTEX(mutex) (memset(mutex, 0, sizeof(pthread_mutex_t))
+#define INIT_PTHREAD_MUTEX(mutex) (memset(mutex, 0, sizeof(pthread_mutex_t)))
 
 typedef struct __arena_header_t {
   pthread_mutex_t arena_lock;
@@ -40,6 +41,10 @@ typedef struct __block_header_t {
   unsigned __padding;
 } block_header_t;
 
+typedef struct __malloc_data {
+  arena_header_t arena;
+} malloc_data;
+
 enum free_status {
   occupied = 0,
   empty = 1
@@ -49,6 +54,7 @@ enum is_mmaped {
   allocated = 0,
   mmaped = 1
 };
+
 
 extern block_header_t *head;
 extern block_header_t *tail;
