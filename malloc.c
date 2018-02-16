@@ -12,20 +12,24 @@ void *request_memory(size_t);
 void fill_header(block_header_t *, size_t);
 int is_need_split(block_header_t *, size_t);
 void split(block_header_t *, size_t);
+void *init_malloc(size_t, const void *);
+int init_arena();
+arena_header_t *find_arena();
+void push_arena(arena_header_t*);
 
 pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
 block_header_t *head = NULL;
 block_header_t *tail = NULL;
-arena_header_t arena;
 
 // Check if malloc has been called previously
-unsigned has_malloc_initiated = 0;
+static unsigned has_malloc_initiated = 0;
 
-static __thread arena_header_t* arena_ptr;
+static __thread arena_header_t *arena_ptr;
 static malloc_data main_data = {0};
+static int number_of_arenas = 1;
+static int number_of_requests = 0;
+static pthread_mutex_t malloc_thread_init_lock = PTHREAD_MUTEX_INITIALIZER;
 
-void *init_malloc(size_t, const void *);
-int init_arena();
 
 typedef void *(*__hook)(size_t __size, const void *);
 __hook __malloc_hook =  (__hook) init_malloc;
@@ -34,7 +38,6 @@ __hook __malloc_hook =  (__hook) init_malloc;
 // Define it to look like malloc
 void *
 init_malloc(size_t size, const void *caller) {
-
   // If request is 0, we return NULL
   if (size == 0)
     return NULL;
@@ -61,17 +64,94 @@ init_arena() {
   INIT_PTHREAD_MUTEX(&arena_ptr->arena_lock);
   arena_ptr->number_of_heaps = 1;
   arena_ptr->number_of_threads = 1;
+  arena_ptr->next = NULL;
+
+  has_malloc_initiated = 1;
   return 0;
 }
 
+int
+init_thread_arena() {
+  pthread_mutex_lock(&malloc_thread_init_lock);
+
+  // Update number of request
+  number_of_requests++;
+
+  // If the arena is full
+  if (number_of_arenas == NUMBER_OF_PROC) {
+    arena_ptr = find_arena();
+    arena_ptr->number_of_threads++;
+    pthread_mutex_unlock(&malloc_thread_init_lock);
+    return 0;
+  }
+
+  arena_header_t *arena = NULL;
+
+  size_t size = sizeof(arena_header_t);
+  if ((arena = (arena_header_t*) sbrk(size)) == NULL) {
+    MALLOC_FAILURE_ACTION;
+    pthread_mutex_unlock(&malloc_thread_init_lock);
+    return 1;
+  }
+
+  INIT_PTHREAD_MUTEX(&arena->arena_lock);
+  arena->number_of_threads = 1;
+  arena->number_of_heaps = 1;
+  arena->next = NULL;
+
+  push_arena(arena);
+
+  // Update number of arenas
+  number_of_arenas++;
+
+  pthread_mutex_unlock(&malloc_thread_init_lock);
+  return 0;
+}
+
+void
+push_arena(arena_header_t *new_arena) {
+  arena_header_t *arena = &main_data.arena;
+  
+  // Find the tail of our arena
+  while (arena->next != NULL) {
+    arena = arena->next;
+  }
+
+  arena->next = new_arena;
+}
+
+arena_header_t *
+find_arena() {
+  arena_header_t *arena = &main_data.arena;
+  int number_of_loops = number_of_requests % NUMBER_OF_PROC;
+  int i = 0;
+
+  for(i; i < number_of_loops; i++) 
+    arena = arena->next;
+  
+  return arena;
+}
+
 /*------------MALLOC---------------*/
-void *malloc(size_t size) {
+void *
+malloc(size_t size) {
+
   // Malloc hook
   __hook lib_hook = __malloc_hook;
   if (lib_hook != NULL)
     return (*lib_hook)(size, __builtin_return_address(0));
 
   // Check if arena_ptr exists
+  if (arena_ptr == NULL && init_thread_arena()) {
+    MALLOC_FAILURE_ACTION;
+    return NULL;
+  }
+
+  // Debug
+  // char buf[1024];
+  // snprintf(buf, 1024, "In find suitable space, at: %d \n", number_of_arenas);
+  // write(STDOUT_FILENO, buf, strlen(buf) + 1);
+
   // If it does not exist create a new arena
   pthread_mutex_lock(&global_mutex);
 
