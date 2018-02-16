@@ -15,7 +15,7 @@ void split(block_header_t *, size_t);
 void *init_malloc(size_t, const void *);
 int init_arena();
 arena_header_t *find_arena();
-void push_arena(arena_header_t*);
+void push_arena(arena_header_t *);
 
 pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
 __thread arena_header_t *arena_ptr;
@@ -23,26 +23,24 @@ __thread arena_header_t *arena_ptr;
 // Check if malloc has been called previously
 static unsigned has_malloc_initiated = 0;
 
-static malloc_data main_data = {0};
+static malloc_data main_data = { 0 };
 static int number_of_arenas = 1;
 static int number_of_requests = 0;
 static pthread_mutex_t malloc_thread_init_lock = PTHREAD_MUTEX_INITIALIZER;
 
-
 typedef void *(*__hook)(size_t __size, const void *);
-__hook __malloc_hook =  (__hook) init_malloc;
+__hook __malloc_hook = (__hook)init_malloc;
 
 /*------------INIT MALLOC----------*/
 // Define it to look like malloc
-void *
-init_malloc(size_t size, const void *caller) {
+void *init_malloc(size_t size, const void *caller) {
   // If request is 0, we return NULL
   if (size == 0)
     return NULL;
   // If request is smaller than 8, we round it to 8
   if (size < 8)
     size = 8;
-  
+
   // If fail to init arena
   if (init_arena())
     return NULL;
@@ -52,12 +50,11 @@ init_malloc(size_t size, const void *caller) {
   return malloc(size);
 }
 
-int 
-init_arena() {
+int init_arena() {
   // If malloc has been done at the beginning, no need to init arena
   if (has_malloc_initiated)
     return 0;
-  
+
   arena_ptr = &main_data.arena;
   INIT_PTHREAD_MUTEX(&arena_ptr->arena_lock);
   arena_ptr->number_of_heaps = 1;
@@ -68,8 +65,7 @@ init_arena() {
   return 0;
 }
 
-int
-init_thread_arena() {
+int init_thread_arena() {
   pthread_mutex_lock(&malloc_thread_init_lock);
 
   // Update number of request
@@ -86,7 +82,7 @@ init_thread_arena() {
   arena_header_t *arena = NULL;
 
   size_t size = sizeof(arena_header_t);
-  if ((arena = (arena_header_t*) sbrk(size)) == NULL) {
+  if ((arena = (arena_header_t *)sbrk(size)) == NULL) {
     MALLOC_FAILURE_ACTION;
     pthread_mutex_unlock(&malloc_thread_init_lock);
     return 1;
@@ -109,10 +105,9 @@ init_thread_arena() {
   return 0;
 }
 
-void
-push_arena(arena_header_t *new_arena) {
+void push_arena(arena_header_t *new_arena) {
   arena_header_t *arena = &main_data.arena;
-  
+
   // Find the tail of our arena
   while (arena->next != NULL) {
     arena = arena->next;
@@ -121,21 +116,19 @@ push_arena(arena_header_t *new_arena) {
   arena->next = new_arena;
 }
 
-arena_header_t *
-find_arena() {
+arena_header_t *find_arena() {
   arena_header_t *arena = &main_data.arena;
   int number_of_loops = number_of_requests % NUMBER_OF_PROC;
   int i = 0;
 
-  for(i; i < number_of_loops; i++) 
+  for (i; i < number_of_loops; i++)
     arena = arena->next;
-  
+
   return arena;
 }
 
 /*------------MALLOC---------------*/
-void *
-malloc(size_t size) {
+void *malloc(size_t size) {
 
   // Malloc hook
   __hook lib_hook = __malloc_hook;
@@ -213,10 +206,10 @@ void *request_memory(size_t size) {
   // Allocate the memory
   if (size <= HEAP_PAGE_SIZE) {
     size = HEAP_PAGE_SIZE;
-  } 
+  }
 
   if ((block = mmap(NULL, size, PROT_READ | PROT_WRITE,
-          MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) == (void *)-1) {
+                    MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) == (void *)-1) {
     MALLOC_FAILURE_ACTION;
     return NULL;
   }
