@@ -141,11 +141,6 @@ void *malloc(size_t size) {
     return NULL;
   }
 
-  // Debug
-  // char buf[1024];
-  // snprintf(buf, 1024, "In find suitable space, at: %d \n", number_of_arenas);
-  // write(STDOUT_FILENO, buf, strlen(buf) + 1);
-
   // If it does not exist create a new arena
   pthread_mutex_lock(&arena_ptr->arena_lock);
 
