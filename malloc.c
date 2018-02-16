@@ -1,7 +1,9 @@
 /*
  Author: Anak Agung Ngurah Bagus Trihatmaja
  Malloc library using buddy allocation algorithm
+ S01E02
 */
+
 #include "mallutl.h" /* for data structure */
 #include "malloc.h"
 #include <math.h>
@@ -18,15 +20,45 @@ block_header_t *tail = NULL;
 
 static __thread arena_header_t* arena_ptr;
 
-/*------------MALLOC---------------*/
-void *malloc(size_t size) {
-  pthread_mutex_lock(&global_mutex);
+
+void *init_malloc(size_t, const void *);
+
+typedef void *(*__hook)(size_t __size, const void *);
+__hook __malloc_hook =  (__hook) init_malloc;
+
+/*------------INIT MALLOC----------*/
+// Define it to look like malloc
+
+void *
+init_malloc(size_t size, const void *caller) {
+
+  // DEBUG
+  // char buf[1024];
+  // snprintf(buf, 1024, "Testing malloc hook\n");
+  // write(STDOUT_FILENO, buf, strlen(buf) + 1);
+
   // If request is 0, we return NULL
   if (size == 0)
     return NULL;
   // If request is smaller than 8, we round it to 8
   if (size < 8)
     size = 8;
+
+  __malloc_hook = NULL;
+  // call malloc
+  return malloc(size);
+}
+
+/*------------MALLOC---------------*/
+void *malloc(size_t size) {
+  // Malloc hook
+  __hook lib_hook = __malloc_hook;
+  if (lib_hook != NULL)
+    return (*lib_hook)(size, __builtin_return_address(0));
+
+  // Check if arena_ptr exists
+  // If it does not exist create a new arena
+  pthread_mutex_lock(&global_mutex);
 
   // Round request to the nearest power of 2
   size_t total_size = sizeof(block_header_t) + size;
