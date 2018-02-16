@@ -18,13 +18,11 @@ arena_header_t *find_arena();
 void push_arena(arena_header_t*);
 
 pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
-block_header_t *head = NULL;
-block_header_t *tail = NULL;
+__thread arena_header_t *arena_ptr;
 
 // Check if malloc has been called previously
 static unsigned has_malloc_initiated = 0;
 
-static __thread arena_header_t *arena_ptr;
 static malloc_data main_data = {0};
 static int number_of_arenas = 1;
 static int number_of_requests = 0;
@@ -101,6 +99,9 @@ init_thread_arena() {
 
   push_arena(arena);
 
+  // Update arena pointer
+  arena_ptr = arena;
+
   // Update number of arenas
   number_of_arenas++;
 
@@ -165,6 +166,7 @@ malloc(size_t size) {
 
   if (total_size > HEAP_PAGE_SIZE ||
       (empty_block = find_suitable_space(total_size)) == NULL) {
+
     // Request memory to the OS
     if ((block = request_memory(total_size)) == NULL) {
       MALLOC_FAILURE_ACTION;
@@ -231,7 +233,7 @@ void fill_header(block_header_t *block, size_t size) {
 }
 
 block_header_t *find_suitable_space(size_t size) {
-  block_header_t *temp = head;
+  block_header_t *temp = arena_ptr->first_block_address;
   while (temp != NULL) {
     // DEBUG
     // char buf[1024];

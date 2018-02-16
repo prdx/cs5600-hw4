@@ -14,21 +14,21 @@ size_t upper_power_of_two(size_t v) {
 
 void push(block_header_t* node) {
   // If list is empty, add the new node as head
-  if (head == NULL) {
-    head = node;
-    tail = node;
+  if (arena_ptr->first_block_address == NULL) {
+    arena_ptr->first_block_address = node;
+    arena_ptr->end_block_address = node;
     return;
   }
-  tail->next = node;
-  tail = node;
+  arena_ptr->end_block_address->next = node;
+  arena_ptr->end_block_address = node;
 }
 
 void remove_node(block_header_t* ptr) {
-  block_header_t* temp = head, *prev;
+  block_header_t* temp = arena_ptr->first_block_address, *prev;
 
   // If head is removed
   if (temp != NULL && temp == ptr) {
-    head = temp->next;
+    arena_ptr->first_block_address = temp->next;
     return;
   }
 

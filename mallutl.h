@@ -22,15 +22,6 @@
 
 #define INIT_PTHREAD_MUTEX(mutex) (memset(mutex, 0, sizeof(pthread_mutex_t)))
 
-typedef struct __arena_header_t {
-  pthread_mutex_t arena_lock;
-  void *first_block_address;
-  size_t size;
-  unsigned number_of_heaps;
-  unsigned number_of_threads;
-  struct __arena_header_t *next;
-} arena_header_t;
-
 typedef struct __block_header_t {
   void *address;
   unsigned order;
@@ -40,6 +31,16 @@ typedef struct __block_header_t {
   struct __block_header_t *next;
   unsigned __padding;
 } block_header_t;
+
+typedef struct __arena_header_t {
+  pthread_mutex_t arena_lock;
+  block_header_t *first_block_address;
+  block_header_t *end_block_address;
+  size_t size;
+  unsigned number_of_heaps;
+  unsigned number_of_threads;
+  struct __arena_header_t *next;
+} arena_header_t;
 
 typedef struct __malloc_data {
   arena_header_t arena;
@@ -56,8 +57,7 @@ enum is_mmaped {
 };
 
 
-extern block_header_t *head;
-extern block_header_t *tail;
+extern __thread arena_header_t *arena_ptr;
 extern pthread_mutex_t global_mutex;
 
 size_t upper_power_of_two(size_t);
