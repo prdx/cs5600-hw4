@@ -39,7 +39,7 @@ typedef struct __block_header_t {
 
 struct mallinfo {
   // The total amount of memory allocated not by mmap (<= a page size)
-  int arena;   
+  int arena;
   // Number of ordinary free blocks
   int ordblks;
   // Number of blocks allocated by mmap
@@ -54,7 +54,7 @@ struct mallinfo {
   int allocreq;
   // Total free request
   int freereq;
-}; 
+};
 
 typedef struct __arena_header_t {
   pthread_mutex_t arena_lock;
@@ -67,7 +67,7 @@ typedef struct __arena_header_t {
   struct mallinfo stats;
 } arena_header_t;
 
-// Malloc data is used just as fixed address for the start 
+// Malloc data is used just as fixed address for the start
 // of the arena
 typedef struct __malloc_data {
   arena_header_t arena;

@@ -6,17 +6,17 @@ arena_header_t *arena_head = &main_data.arena;
 struct mallinfo mallinfo() {
   arena_header_t *arena = arena_head;
   struct mallinfo stats;
-  
-  while(arena != NULL) {
+
+  while (arena != NULL) {
     struct mallinfo arena_stats = arena->stats;
-    stats.arena += arena_stats.arena; 
-    stats.ordblks += arena_stats.ordblks; 
-    stats.hblks += arena_stats.hblks; 
-    stats.hblkhd += arena_stats.hblkhd; 
-    stats.uordblks += arena_stats.uordblks; 
-    stats.fordblks += arena_stats.fordblks; 
-    stats.allocreq += arena_stats.allocreq; 
-    stats.freereq += arena_stats.freereq; 
+    stats.arena += arena_stats.arena;
+    stats.ordblks += arena_stats.ordblks;
+    stats.hblks += arena_stats.hblks;
+    stats.hblkhd += arena_stats.hblkhd;
+    stats.uordblks += arena_stats.uordblks;
+    stats.fordblks += arena_stats.fordblks;
+    stats.allocreq += arena_stats.allocreq;
+    stats.freereq += arena_stats.freereq;
 
     arena = arena->next;
   }
@@ -35,15 +35,15 @@ void malloc_stats() {
   snprintf(buf, 1024, "Total arena allocated: %d\n", total_stats.arena);
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
-  snprintf(buf, 1024, "Number of arena: %d\n", NUMBER_OF_PROC);
+  snprintf(buf, 1024, "Number of arena: %ld\n", NUMBER_OF_PROC);
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
   int index = 0;
   arena_header_t *arena = arena_head;
 
-  while(arena != NULL) {
+  while (arena != NULL) {
     struct mallinfo arena_stats = arena->stats;
-    
+
     // Print title
     snprintf(buf, 1024, "---------------------\n");
     write(STDOUT_FILENO, buf, strlen(buf) + 1);
@@ -78,7 +78,7 @@ void malloc_stats() {
     // Print alloc request
     snprintf(buf, 1024, "Malloc request: %d\n", arena_stats.allocreq);
     write(STDOUT_FILENO, buf, strlen(buf) + 1);
-    
+
     // Print free request
     snprintf(buf, 1024, "Free request: %d\n", arena_stats.freereq);
     write(STDOUT_FILENO, buf, strlen(buf) + 1);

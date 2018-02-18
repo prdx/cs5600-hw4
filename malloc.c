@@ -32,7 +32,7 @@ __hook __malloc_hook = (__hook)init_malloc;
 
 void lock_all() {
   pthread_mutex_lock(&malloc_thread_init_lock);
-  arena_header_t* arena = &main_data.arena;
+  arena_header_t *arena = &main_data.arena;
 
   while (arena != NULL) {
     pthread_mutex_lock(&arena->arena_lock);
@@ -41,7 +41,7 @@ void lock_all() {
 }
 
 void unlock_all() {
-  arena_header_t* arena = &main_data.arena;
+  arena_header_t *arena = &main_data.arena;
 
   while (arena != NULL) {
     pthread_mutex_unlock(&arena->arena_lock);
@@ -51,22 +51,17 @@ void unlock_all() {
   pthread_mutex_unlock(&malloc_thread_init_lock);
 }
 
-void pthread_atfork_prepare(void) {
-  lock_all();
-}
+void pthread_atfork_prepare(void) { lock_all(); }
 
-void pthread_atfork_parent(void) {
-  unlock_all();
-}
+void pthread_atfork_parent(void) { unlock_all(); }
 
-void pthread_atfork_child(void) {
-  unlock_all();
-}
+void pthread_atfork_child(void) { unlock_all(); }
 
 /*------------INIT MALLOC----------*/
 // Define it to look like malloc
 void *init_malloc(size_t size, const void *caller) {
-  if (pthread_atfork(pthread_atfork_prepare, pthread_atfork_parent, pthread_atfork_child))
+  if (pthread_atfork(pthread_atfork_prepare, pthread_atfork_parent,
+                     pthread_atfork_child))
     return NULL;
 
   // Init the first arena
@@ -163,7 +158,7 @@ arena_header_t *find_arena() {
   int number_of_loops = number_of_requests % NUMBER_OF_PROC;
   int i = 0;
 
-  for (i; i < number_of_loops; i++)
+  for (; i < number_of_loops; i++)
     arena = arena->next;
 
   return arena;
@@ -242,7 +237,7 @@ void *malloc(size_t size) {
 
   // Update stats
   if (size <= HEAP_PAGE_SIZE) {
-    arena_ptr->stats.uordblks += temp->size; 
+    arena_ptr->stats.uordblks += temp->size;
   }
 
   pthread_mutex_unlock(&arena_ptr->arena_lock);
@@ -268,9 +263,8 @@ void *request_memory(size_t size) {
 
   // Update stats
   if (size <= HEAP_PAGE_SIZE) {
-    arena_ptr->stats.arena += HEAP_PAGE_SIZE; 
-  } 
-  else {
+    arena_ptr->stats.arena += HEAP_PAGE_SIZE;
+  } else {
     arena_ptr->stats.hblks += 1;
     arena_ptr->stats.hblkhd += size;
   }
