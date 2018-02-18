@@ -14,6 +14,7 @@ void free(void *ptr) {
   // Disallocate memory
   int result;
   pthread_mutex_lock(&arena_ptr->arena_lock);
+  arena_ptr->stats.freereq += 1;
   if ((result = disallocate_memory(ptr)) == -1)
     return;
   pthread_mutex_unlock(&arena_ptr->arena_lock);

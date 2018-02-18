@@ -17,13 +17,12 @@ int init_arena();
 arena_header_t *find_arena();
 void push_arena(arena_header_t *);
 
-pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
 __thread arena_header_t *arena_ptr;
 
 // Check if malloc has been called previously
 static unsigned has_malloc_initiated = 0;
 
-static malloc_data main_data = { 0 };
+malloc_data main_data = { 0 };
 static int number_of_arenas = 1;
 static int number_of_requests = 0;
 static pthread_mutex_t malloc_thread_init_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -60,6 +59,13 @@ int init_arena() {
   arena_ptr->number_of_heaps = 1;
   arena_ptr->number_of_threads = 1;
   arena_ptr->next = NULL;
+  arena_ptr->stats.arena = 0;
+  arena_ptr->stats.ordblks = 0;
+  arena_ptr->stats.hblks = 0;
+  arena_ptr->stats.hblkhd = 0;
+  arena_ptr->stats.uordblks = 0;
+  arena_ptr->stats.allocreq = 0;
+  arena_ptr->stats.freereq = 0;
 
   has_malloc_initiated = 1;
   return 0;
@@ -91,6 +97,13 @@ int init_thread_arena() {
   INIT_PTHREAD_MUTEX(&arena->arena_lock);
   arena->number_of_threads = 1;
   arena->number_of_heaps = 1;
+  arena->stats.arena = 0;
+  arena->stats.ordblks = 0;
+  arena->stats.hblks = 0;
+  arena->stats.hblkhd = 0;
+  arena->stats.uordblks = 0;
+  arena->stats.allocreq = 0;
+  arena->stats.freereq = 0;
   arena->next = NULL;
 
   push_arena(arena);
@@ -143,6 +156,9 @@ void *malloc(size_t size) {
 
   // If it does not exist create a new arena
   pthread_mutex_lock(&arena_ptr->arena_lock);
+
+  // Update stats
+  arena_ptr->stats.allocreq += 1;
 
   // Round request to the nearest power of 2
   size_t total_size = sizeof(block_header_t) + size;

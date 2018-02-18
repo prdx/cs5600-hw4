@@ -32,6 +32,28 @@ typedef struct __block_header_t {
   unsigned __padding;
 } block_header_t;
 
+// We don't have fastbin, because we merge the block
+// We remove the keepcost since we don't use malloc_trim
+// We remove usmblks since this field is maintained only by
+// nonthreading environments
+
+struct mallinfo {
+  // The total amount of memory allocated not by mmap (<= a page size)
+  int arena;   
+  // Number of ordinary free blocks
+  int ordblks;
+  // Number of blocks allocated by mmap
+  int hblks;
+  // Number of bytes allocated by mmap
+  int hblkhd;
+  // Total size of memory occupied by chunks handed out by malloc
+  int uordblks;
+  // Total allocation request
+  int allocreq;
+  // Total free request
+  int freereq;
+}; 
+
 typedef struct __arena_header_t {
   pthread_mutex_t arena_lock;
   block_header_t *first_block_address;
@@ -40,8 +62,11 @@ typedef struct __arena_header_t {
   unsigned number_of_heaps;
   unsigned number_of_threads;
   struct __arena_header_t *next;
+  struct mallinfo stats;
 } arena_header_t;
 
+// Malloc data is used just as fixed address for the start 
+// of the arena
 typedef struct __malloc_data {
   arena_header_t arena;
 } malloc_data;
@@ -56,9 +81,8 @@ enum is_mmaped {
   mmaped = 1
 };
 
-
 extern __thread arena_header_t *arena_ptr;
-extern pthread_mutex_t global_mutex;
+extern malloc_data main_data;
 
 size_t upper_power_of_two(size_t);
 void push(block_header_t *);
