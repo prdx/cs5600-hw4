@@ -27,13 +27,21 @@ int disallocate_memory(void *ptr) {
   // Munmap
   int result;
   if (block->is_mmaped == mmaped) {
+    size_t temp = block->size;
     if ((result = munmap((char *)block - block->__padding, block->size)) ==
         -1) {
       return -1;
     }
+    arena_ptr->stats.hblks -= 1;
+    arena_ptr->stats.hblkhd -= temp;
   } else {
     // Change the status to free for request under 4096
     block->is_free = empty;
+
+    // Update stats
+    arena_ptr->stats.uordblks -= block->size;
+    arena_ptr->stats.ordblks += 1;
+
     merge_if_possible(block);
   }
   return 0;

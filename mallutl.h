@@ -48,6 +48,8 @@ struct mallinfo {
   int hblkhd;
   // Total size of memory occupied by chunks handed out by malloc
   int uordblks;
+  // Total free space
+  int fordblks;
   // Total allocation request
   int allocreq;
   // Total free request

@@ -204,6 +204,11 @@ void *malloc(size_t size) {
   block_header_t *temp = block;
   temp->is_free = occupied;
 
+  // Update stats
+  if (size <= HEAP_PAGE_SIZE) {
+    arena_ptr->stats.uordblks += temp->size; 
+  }
+
   pthread_mutex_unlock(&arena_ptr->arena_lock);
 
   // Return the address of the data section
@@ -224,6 +229,16 @@ void *request_memory(size_t size) {
     MALLOC_FAILURE_ACTION;
     return NULL;
   }
+
+  // Update stats
+  if (size <= HEAP_PAGE_SIZE) {
+    arena_ptr->stats.arena += HEAP_PAGE_SIZE; 
+  } 
+  else {
+    arena_ptr->stats.hblks += 1;
+    arena_ptr->stats.hblkhd += size;
+  }
+
   return block;
 }
 
@@ -272,6 +287,9 @@ void split(block_header_t *block, size_t size) {
   buddy->is_free = empty;
   buddy->next = block->next;
   block->next = buddy;
+
+  // Update stats
+  arena_ptr->stats.ordblks += 1;
 
   // Recursively split again if the block still too large
   split(block, size);
