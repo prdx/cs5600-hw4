@@ -51,6 +51,11 @@ Comparing to the initial design, in initial design, we have to search one by one
 
 In the stats, we follow `man mallinfo`. We consider the request above a page size as handled by mmap and less than one page is handled not by mmap. 
 
+# RUNNING THE PROGRAM
+
+1. `make clean`
+2. `make check1`
+
 
 # ADDITIONAL FEATURES
 
@@ -59,7 +64,8 @@ In the stats, we follow `man mallinfo`. We consider the request above a page siz
 
 # KNOWN BUGS
 
-1. Known bugs in the code are marked as `// FIXME`.
-2. Once or twice, the program would get segmentation fault, but runs fine afterwards. No clue on gdb.
+1. Known bugs in the code are marked as `// FIXME`
+2. Once or twice, the program would get segmentation fault, but runs fine afterwards. No clue on gdb
+3. When compiled, gcc will show a warning. This is a [gcc bug](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119)
 
 *Tested on CCIS machine*
