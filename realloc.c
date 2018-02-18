@@ -16,12 +16,14 @@ void *realloc(void *ptr, size_t size) {
   // Based on the documentation, if size = 0 but ptr is valid, free it instead
   if (size == 0 && ptr != NULL) {
     free(ptr);
+    pthread_mutex_unlock(&arena_ptr->arena_lock);
     return NULL;
   }
 
   // Allocate new memory
   void *addr;
   if ((addr = malloc(size)) == NULL) {
+    pthread_mutex_unlock(&arena_ptr->arena_lock);
     return NULL;
   }
 

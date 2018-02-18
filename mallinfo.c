@@ -25,8 +25,20 @@ struct mallinfo mallinfo() {
 }
 
 void malloc_stats() {
-  int index = 0;
+  struct mallinfo total_stats = mallinfo();
+
   char buf[1024];
+  // Print header
+  snprintf(buf, 1024, "---------------------\n");
+  write(STDOUT_FILENO, buf, strlen(buf) + 1);
+
+  snprintf(buf, 1024, "Total arena allocated: %d\n", total_stats.arena);
+  write(STDOUT_FILENO, buf, strlen(buf) + 1);
+
+  snprintf(buf, 1024, "Number of arena: %d\n", NUMBER_OF_PROC);
+  write(STDOUT_FILENO, buf, strlen(buf) + 1);
+
+  int index = 0;
   arena_header_t *arena = arena_head;
 
   while(arena != NULL) {
@@ -40,7 +52,7 @@ void malloc_stats() {
     write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
     // Print arena
-    snprintf(buf, 1024, "Space allocated: %d\n", arena_stats.arena);
+    snprintf(buf, 1024, "Space allocated (bytes): %d\n", arena_stats.arena);
     write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
     // Print number of free blocks

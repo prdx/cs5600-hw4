@@ -1,5 +1,11 @@
 # DESIGN OVERVIEW
 
+## Per-core malloc arenas
+
+The number of arenas created depends on how many cores in the CPU. In CCIS machine, it has 32 cores, so there will be 32 arenas.
+The thread is assigned based on the order modulo the number of cores. In CCIS machine, if the 33rd thread comes, it will be assigned to the 1st arena, and so on.
+The arenas are created on the fly, depends on if another thread comes to request memory.
+
 ## Allocating memory
 
 Allocating memory is handled by sbrk and mmap. For request larger than 4096 will be handled by mmap and will not using buddy system.
@@ -40,40 +46,25 @@ is in the `mallutl.c` and `mallutl.h`.
 
 # DESIGN DECISION
 
-## Initial design
-
-The initial design was similar like the current design. However, the difference is in where we allocated the header.
-
-------------------------------------------------------------
-|                 |                  |                     |
-|  arena header   |   block header   |     data segment    |
-|                 |                  |                     |
-------------------------------------------------------------
-
-There we have arena header, arena header is basically, a header to manage all of the block headers. It has some statistic on
-how many blocks we have, etc. And block header is like our current block header, it manages the segment.
-Arena header, block header, and data segment starts with the same position.
-We always use fix size (512 * size of block header) to allocate the block header.
-
-In the end, this design consumes more spaces in memory. 
-Imagine, even though the user request only one page, the total memory that will be allocated is `sizeof(arena header) + sizeof(block header) * 512 + page needed`.
-`512` is for the worst case when every user request smallest possible block only, which means there will be 512 blocks maximum.
-So I discard this idea and build the new one from scratch.
-
-In addition, this design is much harder to debug. I had a hard time debugging this design, since there are many possibilities of mistake (wrong address calculation, data structure problems, etc).
-
 ## Final design
 
-In the final design, we don't use arena header. The buddy allocation is handled by the block header only. The block header is located right before every data segment and connected to other block header in the linked list.
+1. The memory allocation is handled using mmap only.
+2. The buddy allocation is handled by the block header only. The block header is located right before every data segment and connected to other block header in the linked list.
 This way, we can always locate the header by simply substracting the data address by the size of the header.
 Comparing to the initial design, in initial design, we have to search one by one in every arena and every header to find which header contains the address. This of course, has unnecessary complexity.
 
-# Known bugs
+## Stats
 
-Known bugs in the code are marked as `// FIXME`.
+In the stats, we follow `man mallinfo`. We consider the request above a page size as handled by mmap and less than one page is handled not by mmap. 
 
-# TIL
 
-Debugging takes me so long, in the end, I try to implement "TDD" approach. We have the test case, so we can build one function at a time -> run test -> fail -> make it pass -> refactor -> repeat.
-Implementing the new design takes me 10 hours with debugging compared to the initial design that takes me around 20 hours with debugging.
+# ADDITIONAL FEATURES
+
+- [x] Implement malloc hook 
+- [ ] Implement heap consistency checking
+
+# KNOWN BUGS
+
+1. Known bugs in the code are marked as `// FIXME`.
+2. Once or twice, the program would get segmentation fault, but runs fine afterwards. No clue on gdb.
 

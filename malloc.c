@@ -30,17 +30,46 @@ static pthread_mutex_t malloc_thread_init_lock = PTHREAD_MUTEX_INITIALIZER;
 typedef void *(*__hook)(size_t __size, const void *);
 __hook __malloc_hook = (__hook)init_malloc;
 
+void lock_all() {
+  pthread_mutex_lock(&malloc_thread_init_lock);
+  arena_header_t* arena = &main_data.arena;
+
+  while (arena != NULL) {
+    pthread_mutex_lock(&arena->arena_lock);
+    arena = arena->next;
+  }
+}
+
+void unlock_all() {
+  arena_header_t* arena = &main_data.arena;
+
+  while (arena != NULL) {
+    pthread_mutex_unlock(&arena->arena_lock);
+    arena = arena->next;
+  }
+
+  pthread_mutex_unlock(&malloc_thread_init_lock);
+}
+
+void pthread_atfork_prepare(void) {
+  lock_all();
+}
+
+void pthread_atfork_parent(void) {
+  unlock_all();
+}
+
+void pthread_atfork_child(void) {
+  unlock_all();
+}
+
 /*------------INIT MALLOC----------*/
 // Define it to look like malloc
 void *init_malloc(size_t size, const void *caller) {
-  // If request is 0, we return NULL
-  if (size == 0)
+  if (pthread_atfork(pthread_atfork_prepare, pthread_atfork_parent, pthread_atfork_child))
     return NULL;
-  // If request is smaller than 8, we round it to 8
-  if (size < 8)
-    size = 8;
 
-  // If fail to init arena
+  // Init the first arena
   if (init_arena())
     return NULL;
 
@@ -159,6 +188,13 @@ void *malloc(size_t size) {
 
   // Update stats
   arena_ptr->stats.allocreq += 1;
+
+  // If request is 0, we return NULL
+  if (size == 0)
+    return NULL;
+  // If request is smaller than 8, we round it to 8
+  if (size < 8)
+    size = 8;
 
   // Round request to the nearest power of 2
   size_t total_size = sizeof(block_header_t) + size;

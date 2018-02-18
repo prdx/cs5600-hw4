@@ -64,6 +64,9 @@ void merge_if_possible(block_header_t *header) {
         current->next = temp->next;
         temp = NULL;
         current = header;
+
+        // Update stats
+        arena_ptr->stats.ordblks -= 1;
         continue;
       }
       current = current->next->next;
