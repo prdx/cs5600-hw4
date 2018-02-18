@@ -40,6 +40,7 @@ int disallocate_memory(void *ptr) {
 
     // Update stats
     arena_ptr->stats.uordblks -= block->size;
+    arena_ptr->stats.fordblks += block->size;
     arena_ptr->stats.ordblks += 1;
 
     merge_if_possible(block);
