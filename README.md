@@ -33,12 +33,6 @@ typedef struct __block_header_t {
 
 The header is located right before the data segment.
 
-------------------------------------------------------------
-|                 |                     |
-|  block header   |     data segment    | .................
-|                 |                     |
-------------------------------------------------------------
-
 ## Code overview
 
 Basically, every functions has its own .c and .h file. The helper codes and data structure definition
@@ -68,3 +62,4 @@ In the stats, we follow `man mallinfo`. We consider the request above a page siz
 1. Known bugs in the code are marked as `// FIXME`.
 2. Once or twice, the program would get segmentation fault, but runs fine afterwards. No clue on gdb.
 
+*Tested on CCIS machine*
