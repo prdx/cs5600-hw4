@@ -2,8 +2,10 @@
 #include "mallutl.h"
 
 arena_header_t *arena_head = &main_data.arena;
+static int i = 0;
 
 struct mallinfo mallinfo() {
+  i = 0;
   arena_header_t *arena = arena_head;
   struct mallinfo stats;
 
@@ -18,6 +20,7 @@ struct mallinfo mallinfo() {
     stats.allocreq += arena_stats.allocreq;
     stats.freereq += arena_stats.freereq;
 
+    i++;
     arena = arena->next;
   }
 
@@ -35,7 +38,7 @@ void malloc_stats() {
   snprintf(buf, 1024, "Total arena allocated: %ul\n", total_stats.arena);
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
-  snprintf(buf, 1024, "Number of arena: %ld\n", NUMBER_OF_PROC);
+  snprintf(buf, 1024, "Number of arena: %ld\n", i);
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
   int index = 0;
