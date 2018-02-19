@@ -51,6 +51,33 @@ Comparing to the initial design, in initial design, we have to search one by one
 
 In the stats, we follow `man mallinfo`. We consider the request above a page size as handled by mmap and less than one page is handled not by mmap. 
 
+```
+// We don't have fastbin, because we merge the block
+// We remove the keepcost since we don't use malloc_trim
+// We remove usmblks since this field is maintained only by
+// nonthreading environments
+
+struct mallinfo {
+  // The total amount of memory allocated not by mmap (<= a page size)
+  unsigned long int arena;
+  // Number of ordinary free blocks
+  long int ordblks;
+  // Number of blocks allocated by mmap
+  int hblks;
+  // Number of bytes allocated by mmap
+  int hblkhd;
+  // Total size of memory occupied by chunks handed out by malloc
+  int uordblks;
+  // Total free space
+  int fordblks;
+  // Total allocation request
+  int allocreq;
+  // Total free request
+  int freereq;
+};
+
+```
+
 # RUNNING THE PROGRAM
 
 1. `make clean`
