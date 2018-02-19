@@ -39,9 +39,9 @@ typedef struct __block_header_t {
 
 struct mallinfo {
   // The total amount of memory allocated not by mmap (<= a page size)
-  int arena;
+  unsigned long int arena;
   // Number of ordinary free blocks
-  int ordblks;
+  long int ordblks;
   // Number of blocks allocated by mmap
   int hblks;
   // Number of bytes allocated by mmap

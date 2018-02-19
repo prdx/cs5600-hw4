@@ -32,7 +32,7 @@ void malloc_stats() {
   snprintf(buf, 1024, "---------------------\n");
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
-  snprintf(buf, 1024, "Total arena allocated: %d\n", total_stats.arena);
+  snprintf(buf, 1024, "Total arena allocated: %ul\n", total_stats.arena);
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
   snprintf(buf, 1024, "Number of arena: %ld\n", NUMBER_OF_PROC);
