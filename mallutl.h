@@ -41,7 +41,7 @@ struct mallinfo {
   // The total amount of memory allocated not by mmap (<= a page size)
   unsigned long int arena;
   // Number of ordinary free blocks
-  long int ordblks;
+  int ordblks;
   // Number of blocks allocated by mmap
   int hblks;
   // Number of bytes allocated by mmap

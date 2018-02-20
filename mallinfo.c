@@ -35,10 +35,10 @@ void malloc_stats() {
   snprintf(buf, 1024, "---------------------\n");
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
-  snprintf(buf, 1024, "Total arena allocated: %ul\n", total_stats.arena);
+  snprintf(buf, 1024, "Total arena allocated: %lu\n", total_stats.arena);
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
-  snprintf(buf, 1024, "Number of arena: %ld\n", i);
+  snprintf(buf, 1024, "Number of arena: %d\n", i);
   write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
   int index = 0;
@@ -55,7 +55,7 @@ void malloc_stats() {
     write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
     // Print arena
-    snprintf(buf, 1024, "Space allocated (bytes): %d\n", arena_stats.arena);
+    snprintf(buf, 1024, "Space allocated (bytes): %lu\n", arena_stats.arena);
     write(STDOUT_FILENO, buf, strlen(buf) + 1);
 
     // Print number of free blocks
